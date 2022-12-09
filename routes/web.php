@@ -17,4 +17,22 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/pzn', function (){
+   return "Programmer Zaman Now";
+});
 
+Route::redirect('/youtube', '/pzn');
+
+//membuat view 404 sendiri
+Route::fallback(function (){
+   return "404 by Programmer Zaman Now";
+});
+
+Route::view('/hello', 'hello', ['name' => 'Eko']);
+Route::get('/hello-again', function(){
+    return view('hello', ['name' => 'Eko']);
+});
+
+Route::get('/hello-world', function (){
+    return view('hello.world', ['name' => 'Eko']);
+});

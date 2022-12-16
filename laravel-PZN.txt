@@ -1,0 +1,224 @@
+#Membuat Unit Test di laravel
+-integration tes (framework laravel test/feature)
+php artisan make:test NamaTest 
+
+-unit test (php unit test)
+php artisan make:test NamaTest --unit
+
+-menjalankan unit test
+-semua test
+php artisan test
+
+#Environment  
+php artisan make:test EnvironmentTest
+
+-menjalankan single test
+php artisan test --filter EnvironmentTest
+
+#configuration cache
+-mengcache file konfigurasi menjadi satu file
+-proses baca datanya lebih cepat
+php artisan config:cache
+
+-kalo ada perubahan harus dijalankan lagi cachenya (mirip mix js)
+-tapi kalo sudah di production jarang sekali ini di eksekusi/tergantung perubahaannya
+-semua file yg ada di folder config di merge
+-filenya ada di folder bootstrap/cache/config.php
+
+-hapus Configuration cache
+-karena laravel membaca hanya yg ada di cache 
+php artisan config:clear
+
+#dependency Injection
+
+
+#Service Provider
+-membuat service provider
+php artisan make:provider NamaServiceProvider
+
+
+-ketika service sudah banyak
+-dan akan di load ketika dibutuhkan 
+-ubah menjadi defferd
+class FooBarServiceProvider extends ServiceProvider implements DeferrableProvider
+hapus cache nya karena masih ada di eager
+-yg ada di bootsrap cache dihapus
+-termasuk service.php
+php artisan clear-compile
+terus running aplikasinya lagi
+
+CATATAN ISTILAH
+eager : diload terus menerus
+lazy : diload ketika dibutuhkan
+
+
+#mocking static function biasanya sulit untuk di test
+untungnya da library Mockery
+digunakan utk mocking facadesnya
+ 
+
+#Routing
+-RouteServiceProvider
+
+lihat smua routing
+php artisan route:list
+
+-fallback route
+-mengubah halaman 404
+-akan dieksekusi ketika tdk ada route yg cocok dgn hlmn yg di akses
+Route::fallback(closure)
+
+
+#optimizing Views
+-ketika di production
+-ada baiknya melakukan proses kompilasi seluruh blade template
+terlebih dahulu
+-utk compile view atau blade template gunakan prnth :
+php artisan view:cache
+
+-ketika di development jagnan dulu di compile
+-semua hasil compile ada di folder storage/framework/views
+-jika ingin menghapus seluruh hasil compile, gnkn prnth:
+php artisan view:clear
+
+#test view tanpa routing
+pakenya view di testing
+
+#static file
+di folder public
+index.js
+index.css
+
+#resource css dan js
+-melakukan compile file css dan js
+-di minify
+npm run prod
+
+-coba tambahkan di reasoruce css
+.test{ font-family: Arial}
+
+-di resource js
+function hello(){ return `Hello`; }
+
+-perintahnya ada di packeage.json
+-pake yg prod
+npm run prod
+
+-kalo belum ada dependency 
+npm install
+npm prod
+
+#route parameter
+-untuk membaut route paramater '/{nama}'
+Route::get('products/{id}', function ($productId){
+   return "Product $productId";
+});
+Route::get('products/{product}/items/{item}', function ($productId, $itemId){
+    return "Product $productId, Item $itemId";
+});
+
+#regular Expression Constaints
+-kadang parameter hanya ingin angka saja
+-regular expression di route parameter
+-caranya bisa gunakan function where setelah pembuatan routenya
+Route::get('/categories/{id}',function ($categoryId){
+    return "Category $categoryId";
+})->where('id', '[0-9]+');
+
+#optional Route parameter
+-parameter yg tidak wajib diisi
+-namun ingat jika menjadika route parameternya optional
+-maka wajib tambah default value di closure function nya
+ Route::get('/users/{id?}', function ($userId = "404"){
+   return "Users $userId";
+});
+
+#Routing Confilict
+-kadang terjadi conflict
+-laravel kalo conflict tidak error
+-tapi laravel akan memprioritaskan router yg pertama kali dibuat
+Route::get('conflict/eko', function (){
+    return "Conflict Eko Khannedy";
+});
+Route::get('conflict/{name}', function ($name){
+   return "Conflict $name";
+});
+
+
+#Named Route
+-menamai route
+-function name()
+->name('product.detail');
+Route::get('/produk/{id}', function ($id){
+   $link = route('product.detail', ['id' => $id]);
+   return "Link $link";
+});
+
+Route::get('produk-redirect/{id}', function ($id){
+   return redirect()->route('product.detail', ['id'=> $id]);
+});
+-unit test
+ $this->get('/produk/12345')
+            ->assertSeeText('Link http://localhost/products/12345');
+
+        $this->get('/produk-redirect/12345')
+            ->assertRedirect('/products/12345');
+
+
+#Controller
+-menaruh logic di controller
+php artisan make:controller NamaController
+Route::get('/controller/hello', [\App\Http\Controllers\HelloController::class, 'hello']);
+
+-unit test
+ public function testHello()
+    {
+        $this->get('/controller/hello')
+            ->assertSeeText('Hello World');
+    }
+
+-mendukung dependency injection
+
+
+#Request
+-HTTP request di bungkus dalam sebuah object
+function hello(Request $request)
+{
+	$request->path();
+	$request->url();
+	$request->fullurl();
+	$request->mehod();
+}
+
+#request method
+-informasi HTTP header
+$request->header(key)
+-kalo tidak ada bisa membaut default value
+$request->header(key, default)
+
+-mendapatkan bearer token
+-header authorization
+-ini sudah masuk restfull API
+$request->bearerToken()
+
+
+#request input
+-menerima input http request
+$request->input(key, default);
+-contoh:
+$request->input('name');
+-laravel mengambil yang ada di query parameter ataupun di body
+
+
+#Nested Input
+-salah satu fitur powerfull laravel, mengambil nested dgn titik (.)
+-contoh : $request->input('name.first');
+-arttinya mengambil key first di dalam name
+-ini cocok kirim request dlm bentuk form atau json
+
+
+#Mengambil Array Input
+-laravel juga memiliki kmmpuan utk mengambil value dari input berupa array
+-contoh:
+$request->input('products.*.name');
+-artinya kita mengambil semau name yg ada di array product
